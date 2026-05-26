@@ -40,7 +40,7 @@ ssh bandit1@bandit.labs.overthewire.org -p 2220
 Running `cat -` doesn't work because `-` is interpreted by bash as stdin, not a filename.
 
 ```bash
-cat -      #  waits for keyboard input — wrong
+cat -      # ❌ waits for keyboard input — wrong
 ```
 
 **Solution:**
@@ -48,7 +48,7 @@ cat -      #  waits for keyboard input — wrong
 Prefix the filename with `./` to tell bash it's a file path:
 
 ```bash
-cat ./-    
+cat ./-    # ✅
 ```
 
 **What I learned:**
@@ -73,7 +73,7 @@ ssh bandit2@bandit.labs.overthewire.org -p 2220
 Spaces in filenames break shell commands — bash treats each word as a separate argument.
 
 ```bash
-cat --spaces in this filename--   #  broken
+cat --spaces in this filename--   # ❌ broken
 ```
 
 **Solution:**
@@ -81,8 +81,8 @@ cat --spaces in this filename--   #  broken
 Either escape the spaces with `\` or wrap the name in quotes:
 
 ```bash
-cat ./--spaces\ in\ this\ filename--    #  escape spaces
-cat "./--spaces in this filename--"     #  quotes
+cat ./--spaces\ in\ this\ filename--    # ✅ escape spaces
+cat "./--spaces in this filename--"     # ✅ quotes
 ```
 
 **What I learned:**
@@ -265,11 +265,6 @@ ssh bandit7@bandit.labs.overthewire.org -p 2220
 Use `grep` to find the line containing `millionth`:
 
 ```bash
-cat data.txt | grep millionth
-```
-
-Or more directly:
-```bash
 grep millionth data.txt
 ```
 
@@ -346,8 +341,6 @@ strings data.txt | grep '==='
 **Password:** `[REDACTED]`
 
 ---
-
-*---*
 
 ## Level 10 → 11
 
@@ -436,8 +429,8 @@ ssh bandit12@bandit.labs.overthewire.org -p 2220
 Since the home directory is read-only, first create a working directory in `/tmp`:
 
 ```bash
-mkdir /tmp/b11
-cd /tmp/b11
+mkdir /tmp/b12
+cd /tmp/b12
 cp ~/data.txt .
 ```
 
@@ -451,38 +444,30 @@ Then repeatedly check the file type and decompress accordingly:
 
 ```bash
 file data.bin          # gzip
-mv data.bin data.gz
-gunzip data.gz
+mv data.bin data.gz && gunzip data.gz
 
 file data              # bzip2
-mv data data.bz2
-bunzip2 data.bz2
+mv data data.bz2 && bunzip2 data.bz2
 
 file data              # gzip again
-mv data data.gz
-gunzip data.gz
+mv data data.gz && gunzip data.gz
 
 file data              # tar
-mv data data.tar
-tar -xvf data.tar      # extracts data5.bin
+mv data data.tar && tar -xvf data.tar      # extracts data5.bin
 
 file data5.bin         # tar again
-mv data5.bin data.tar
-tar -xvf data.tar      # extracts data6.bin
+mv data5.bin data.tar && tar -xf data.tar  # extracts data6.bin
 
 file data6.bin         # bzip2
-mv data6.bin data.bz2
-bunzip2 data.bz2
+mv data6.bin data.bz2 && bunzip2 data.bz2
 
 file data              # tar again
-mv data data.tar
-tar -xf data.tar       # extracts data8.bin
+mv data data.tar && tar -xf data.tar       # extracts data8.bin
 
 file data8.bin         # gzip
-mv data8.bin data.gz
-gunzip data.gz
+mv data8.bin data.gz && gunzip data.gz
 
-file data              # ASCII text 
+file data              # ASCII text ✅
 cat data
 ```
 
@@ -498,24 +483,297 @@ hexdump
             → bzip2
               → tar
                 → gzip
-                  → ASCII text 
+                  → ASCII text ✅
 ```
-
-**Commands Used:**
-
-| Command | Purpose |
-|---------|---------|
-| `xxd -r` | reverse hexdump → binary |
-| `file` | identify file type |
-| `gunzip` | decompress gzip |
-| `bunzip2` | decompress bzip2 |
-| `tar -xvf` | extract tar archive |
 
 **What I learned:**
 - Always check file type with `file` before trying to open — extension doesn't matter
 - `/tmp` is the writable scratch space on shared systems
 - `xxd -r` reverses a hexdump back to binary
 - Files can be compressed multiple times with different formats
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 13 → 14
+
+**Goal:** Use an SSH private key to log into the next level.
+
+**Connect:**
+```bash
+ssh bandit13@bandit.labs.overthewire.org -p 2220
+```
+
+**The Problem:**
+
+Instead of a password, we receive `sshkey.private` — an RSA private key for bandit14.
+
+**Solution:**
+
+Copy the key and set correct permissions:
+
+```bash
+cat sshkey.private > key.pem
+chmod 600 key.pem
+```
+
+SSH using the key:
+
+```bash
+ssh -i key.pem bandit14@bandit.labs.overthewire.org -p 2220
+```
+
+Then read the password file:
+
+```bash
+cat /etc/bandit_pass/bandit14
+```
+
+**What I learned:**
+- SSH uses public-key cryptography for passwordless authentication
+- Private keys must have permissions `600` (owner only) — SSH rejects if world-readable
+- `-i` flag specifies the identity/private key file
+- RSA is an asymmetric encryption algorithm
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 14 → 15
+
+**Goal:** Submit the bandit14 password to localhost port 30000 to get the bandit15 password.
+
+**Connect:**
+```bash
+ssh bandit14@bandit.labs.overthewire.org -p 2220
+```
+
+**The Problem:**
+
+Port 30000 is running a service that expects the current level's password and returns the next level's password.
+
+**Solution:**
+
+Get the current password:
+
+```bash
+cat /etc/bandit_pass/bandit14
+```
+
+Connect to localhost:30000 using netcat:
+
+```bash
+nc localhost 30000
+[paste password here]
+```
+
+The server responds with `Correct!` and returns the next level's password.
+
+**What I learned:**
+- `nc` (netcat) is the "TCP/IP swiss army knife"
+- Used for reading/writing to network sockets
+- Port 30000 runs a simple echo service that validates passwords
+- Many wargame levels use local services on high-numbered ports
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 15 → 16
+
+**Goal:** Submit the bandit15 password to port 30001 using SSL/TLS encryption.
+
+**Connect:**
+```bash
+ssh bandit15@bandit.labs.overthewire.org -p 2220
+```
+
+**The Problem:**
+
+Port 30001 requires SSL/TLS — `nc` won't work, need `openssl s_client`.
+
+**Solution:**
+
+Get current password:
+
+```bash
+cat /etc/bandit_pass/bandit15
+```
+
+Connect with SSL/TLS:
+
+```bash
+openssl s_client -connect localhost:30001
+[paste password here]
+```
+
+Server responds with `Correct!` and the next level's password.
+
+**What I learned:**
+- `openssl s_client` creates an SSL/TLS client connection
+- Self-signed certificates produce warnings but still work
+- Verify certificate details even if warnings appear (check CN, validity dates)
+- TLS encrypts the connection (password not visible in plaintext)
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 16 → 17
+
+**Goal:** Find which port in range 31000-32000 speaks SSL/TLS and returns the SSH private key for bandit17.
+
+**Connect:**
+```bash
+ssh bandit16@bandit.labs.overthewire.org -p 2220
+```
+
+**The Problem:**
+
+The description says there are multiple ports listening, but only one returns credentials. The others echo back what you send.
+
+**Solution:**
+
+Scan for open ports:
+
+```bash
+for port in {31000..32000}; do timeout 1 nc -zv localhost $port 2>&1 | grep succeeded; done
+```
+
+Test each with `openssl s_client`:
+
+```bash
+openssl s_client -connect localhost:31790 -quiet
+```
+
+The correct port will request the password and return the SSH private key.
+
+Save the private key:
+
+```bash
+chmod 600 key17.pem
+ssh -i key17.pem bandit17@bandit.labs.overthewire.org -p 2220
+```
+
+**What I learned:**
+- Port scanning identifies which services are running
+- Most ports echo your input back (test with `nc`)
+- Only one port will process credentials correctly
+- `openssl s_client -quiet` suppresses certificate output for cleaner reading
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 17 → 18
+
+**Goal:** Find the only line that has changed between `passwords.old` and `passwords.new`.
+
+**Connect:**
+```bash
+ssh bandit17@bandit.labs.overthewire.org -p 2220
+```
+
+**The Problem:**
+
+Two files with 100+ lines each. Can't manually compare.
+
+**Solution:**
+
+Use `diff` to show differences:
+
+```bash
+diff passwords.old passwords.new
+```
+
+Output:
+```
+42c42
+< KxOU4IzbXM8j8HeAWPAXTd1eC77mp1qV
+---
+> [REDACTED]
+```
+
+The new password is the line marked with `>`.
+
+**What I learned:**
+- `diff` compares two files line-by-line
+- Output shows additions (`>`), deletions (`<`), and changes (`c`)
+- Useful for version control and file comparison
+- Can use `diff -u` for unified format (shows context)
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 18 → 19
+
+**Goal:** Read the `readme` file when `.bashrc` logs you out immediately upon SSH login.
+
+**Connect:**
+```bash
+ssh bandit18@bandit.labs.overthewire.org -p 2220
+```
+
+**The Problem:**
+
+Logging in normally results in instant logout due to modified `.bashrc`.
+
+**Solution:**
+
+Execute a command directly via SSH without spawning an interactive shell:
+
+```bash
+ssh bandit18@bandit.labs.overthewire.org -p 2220 "cat ~/readme"
+```
+
+This executes the command before `.bashrc` logout happens and returns the password.
+
+**What I learned:**
+- SSH can execute single commands without interactive shell: `ssh user@host "command"`
+- `.bashrc` is executed for non-interactive shells, but some operations bypass it
+- This demonstrates why security relies on multiple layers, not just `.bashrc`
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 19 → 20
+
+**Goal:** Use a SETUID binary to execute a command as another user and read the next level's password.
+
+**Connect:**
+```bash
+ssh bandit19@bandit.labs.overthewire.org -p 2220
+```
+
+**The Problem:**
+
+A setuid binary `bandit20-do` allows executing commands as `bandit20` user.
+
+**Solution:**
+
+Examine the binary:
+
+```bash
+ls -la
+# -rwsr-x---   1 bandit20 bandit19 14888 Apr  3 15:17 bandit20-do
+```
+
+The `s` in permissions indicates setuid — when executed, runs as the owner (`bandit20`).
+
+Run a command with elevated privileges:
+
+```bash
+./bandit20-do cat /etc/bandit_pass/bandit20
+```
+
+**What I learned:**
+- SETUID (Set User ID) bit allows a binary to run with the owner's permissions
+- Permission format: `s` in owner execute position = setuid
+- `chmod u+s <file>` adds setuid bit
+- Important security concern — setuid binaries can be exploited if they have vulnerabilities
 
 **Password:** `[REDACTED]`
 
