@@ -673,7 +673,8 @@ ssh -i key17.pem bandit17@bandit.labs.overthewire.org -p 2220
 
 **Connect:**
 ```bash
-ssh bandit17@bandit.labs.overthewire.org -p 2220
+chmod 600 key17.pem
+ssh -i key17.pem bandit17@bandit.labs.overthewire.org -p 2220
 ```
 
 **The Problem:**
