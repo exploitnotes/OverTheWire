@@ -27,9 +27,12 @@
 | [Level 13 → 14](./levels.md#level-13--14) | SSH Private Key |
 | [Level 14 → 15](./levels.md#level-14--15) | Netcat (`nc`) |
 | [Level 15 → 16](./levels.md#level-15--16) | SSL/TLS Connection |
-| [Level 16 → 17](./levels.md#level-16--17) | Port Scanning & SSL |
+| [Level 16 → 17](./levels.md#level-16--17) | Port Scanning (`nmap`) |
 | [Level 17 → 18](./levels.md#level-17--18) | `diff` Command |
 | [Level 18 → 19](./levels.md#level-18--19) | SSH Command Execution |
 | [Level 19 → 20](./levels.md#level-19--20) | SETUID Binary |
+| [Level 20 → 21](./levels.md#level-20--21) | Network Service Connection |
+| [Level 21 → 22](./levels.md#level-21--22) | Cron Jobs |
+| [Level 22 → 23](./levels.md#level-22--23) | Cron Job Analysis |
 
 ---

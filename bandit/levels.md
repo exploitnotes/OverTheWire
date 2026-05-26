@@ -635,19 +635,20 @@ The description says there are multiple ports listening, but only one returns cr
 
 **Solution:**
 
-Scan for open ports:
+Use nmap to scan and identify services:
 
 ```bash
-for port in {31000..32000}; do timeout 1 nc -zv localhost $port 2>&1 | grep succeeded; done
+nmap -sCV -p 31000-32000 localhost
 ```
 
-Test each with `openssl s_client`:
+Output shows port 31790 has SSL/TLS with service detection. Test it:
 
 ```bash
 openssl s_client -connect localhost:31790 -quiet
+[paste password here]
 ```
 
-The correct port will request the password and return the SSH private key.
+The server will request the password and return the SSH private key.
 
 Save the private key:
 
@@ -657,10 +658,10 @@ ssh -i key17.pem bandit17@bandit.labs.overthewire.org -p 2220
 ```
 
 **What I learned:**
-- Port scanning identifies which services are running
-- Most ports echo your input back (test with `nc`)
-- Only one port will process credentials correctly
-- `openssl s_client -quiet` suppresses certificate output for cleaner reading
+- `nmap -sCV` performs service version detection
+- Multiple ports run echo services (plain and SSL variants)
+- Only port 31790 with SSL processes credentials correctly
+- Port scanning reveals service types and versions quickly
 
 **Password:** `[REDACTED]`
 
@@ -779,4 +780,181 @@ Run a command with elevated privileges:
 
 ---
 
-*More levels coming soon...*
+## Level 20 → 21
+
+**Goal:** Connect to a listening port using a setuid binary and establish a two-way connection to exchange passwords.
+
+**Connect:**
+```bash
+ssh bandit20@bandit.labs.overthewire.org -p 2220
+```
+
+**The Problem:**
+
+A setuid binary `suconnect` takes a port number and connects to localhost, expecting the bandit20 password. If correct, it sends the bandit21 password back.
+
+**Solution:**
+
+Open two terminal sessions:
+
+Terminal 1 - Start a netcat listener:
+
+```bash
+nc -lnvp 4444
+```
+
+Terminal 2 - Run the suconnect binary:
+
+```bash
+./suconnect 4444
+```
+
+The binary will connect to your listener on port 4444. When it connects, netcat will display the connection. Send the current password:
+
+```bash
+[send: 0qXahG8ZjOVMN9Ghs7iOWsCfZyXOUbYO]
+```
+
+The binary verifies the password and sends back the next level's password.
+
+**What I learned:**
+- Setuid binaries can enforce authentication through network connections
+- `nc -lnvp` creates a listening server on a specified port
+- Multi-terminal workflows are useful for testing network services
+- The binary validates the password and transmits the next one
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 21 → 22
+
+**Goal:** Find the password by examining cron jobs in `/etc/cron.d/`.
+
+**Connect:**
+```bash
+ssh bandit21@bandit.labs.overthewire.org -p 2220
+```
+
+**The Problem:**
+
+A cron job runs automatically for bandit22. Examine what it does to find the password.
+
+**Solution:**
+
+List cron jobs:
+
+```bash
+cat /etc/cron.d/cronjob_bandit22
+```
+
+Output shows:
+
+```bash
+@reboot bandit22 /usr/bin/cronjob_bandit22.sh &> /dev/null
+* * * * * bandit22 /usr/bin/cronjob_bandit22.sh &> /dev/null
+```
+
+This runs `/usr/bin/cronjob_bandit22.sh` as bandit22 every minute. Check the script:
+
+```bash
+cat /usr/bin/cronjob_bandit22.sh
+```
+
+Output:
+
+```bash
+#!/bin/bash
+chmod 644 /tmp/t7O6lds9S0RqQh9aMcz6ShpAoZKF7fgv
+cat /etc/bandit_pass/bandit22 > /tmp/t7O6lds9S0RqQh9aMcz6ShpAoZKF7fgv
+```
+
+The script writes bandit22's password to a temporary file. Read it:
+
+```bash
+cat /tmp/t7O6lds9S0RqQh9aMcz6ShpAoZKF7fgv
+```
+
+**What I learned:**
+- Cron jobs are scheduled tasks that run automatically
+- `/etc/cron.d/` contains system-wide cron jobs
+- Scripts executed by cron run with the specified user's privileges
+- Temporary files created by cron jobs are often world-readable
+- Check what scripts do before running them
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 22 → 23
+
+**Goal:** Find the password by analyzing a cron job that uses md5sum to generate a filename.
+
+**Connect:**
+```bash
+ssh bandit22@bandit.labs.overthewire.org -p 2220
+```
+
+**The Problem:**
+
+A cron job for bandit23 generates a filename using md5sum of a string. We need to calculate what that filename is.
+
+**Solution:**
+
+Check the cron job:
+
+```bash
+cat /etc/cron.d/cronjob_bandit23
+```
+
+Output:
+
+```bash
+@reboot bandit23 /usr/bin/cronjob_bandit23.sh &> /dev/null
+* * * * * bandit23 /usr/bin/cronjob_bandit23.sh &> /dev/null
+```
+
+Read the script:
+
+```bash
+cat /usr/bin/cronjob_bandit23.sh
+```
+
+Output:
+
+```bash
+#!/bin/bash
+myname=$(whoami)
+mytarget=$(echo I am user $myname | md5sum | cut -d ' ' -f 1)
+echo "Copying passwordfile /etc/bandit_pass/$myname to /tmp/$mytarget"
+cat /etc/bandit_pass/$myname > /tmp/$mytarget
+```
+
+The script:
+1. Gets the current user (bandit23)
+2. Creates an md5sum of "I am user bandit23"
+3. Writes the password to `/tmp/[md5sum]`
+
+Calculate the md5sum:
+
+```bash
+echo 'I am user bandit23' | md5sum | cut -d ' ' -f 1
+```
+
+Output: `8ca319486bfbbc3663ea0fbe81326349`
+
+Read the password file:
+
+```bash
+cat /tmp/8ca319486bfbbc3663ea0fbe81326349
+```
+
+**What I learned:**
+- Cron jobs can be analyzed to predict their behavior
+- md5sum creates a consistent hash from a string
+- Understanding the logic allows us to calculate the output filename
+- The script assumes the temporary directory is secure, but it's readable
+
+**Password:** `[REDACTED]`
+
+---
