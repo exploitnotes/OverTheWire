@@ -34,5 +34,15 @@
 | [Level 20 → 21](./levels.md#level-20--21) | Network Service Connection |
 | [Level 21 → 22](./levels.md#level-21--22) | Cron Jobs |
 | [Level 22 → 23](./levels.md#level-22--23) | Cron Job Analysis |
+| [Level 23 → 24](./levels.md#level-23--24) | Cron Spool Exploitation |
+| [Level 24 → 25](./levels.md#level-24--25) | Brute-Force PIN |
+| [Level 25 → 26](./levels.md#level-25--26) | Restricted Shell Escape |
+| [Level 26 → 27](./levels.md#level-26--27) | SETUID Privilege Elevation |
+| [Level 27 → 28](./levels.md#level-27--28) | Git Repository Basics |
+| [Level 28 → 29](./levels.md#level-28--29) | Git History & Commits |
+| [Level 29 → 30](./levels.md#level-29--30) | Git Branches |
+| [Level 30 → 31](./levels.md#level-30--31) | Git Tags |
+| [Level 31 → 32](./levels.md#level-31--32) | Git Push & Hooks |
+| [Level 32 → 33](./levels.md#level-32--33) | Uppercase Shell Escape |
 
 ---
