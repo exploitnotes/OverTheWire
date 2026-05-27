@@ -4,23 +4,17 @@
 
 ## Level 0 → 1
 
-**Goal:** Log in via SSH and read the `readme` file.
+Log in via SSH and read the readme file.
 
-**Connect:**
 ```bash
 ssh bandit0@bandit.labs.overthewire.org -p 2220
 # password: bandit0
-```
 
-**Solution:**
-```bash
 ls
 cat readme
 ```
 
-**What I learned:**
-- How to connect to a remote machine via SSH
-- Basic `ls` and `cat` commands
+Pretty straightforward. Password is in the readme.
 
 **Password:** `[REDACTED]`
 
@@ -28,32 +22,17 @@ cat readme
 
 ## Level 1 → 2
 
-**Goal:** Read a file named `-` (a dash).
+Read a file named `-` (a dash).
 
-**Connect:**
 ```bash
 ssh bandit1@bandit.labs.overthewire.org -p 2220
 ```
 
-**The Problem:**
-
-Running `cat -` doesn't work because `-` is interpreted by bash as stdin, not a filename.
+The file is literally called `-`. If you try `cat -` it just waits for input (stdin). The dash is a special character in bash. Solution is to use `./` to force it to treat it as a filename:
 
 ```bash
-cat -      # ❌ waits for keyboard input — wrong
+cat ./-
 ```
-
-**Solution:**
-
-Prefix the filename with `./` to tell bash it's a file path:
-
-```bash
-cat ./-    # ✅
-```
-
-**What I learned:**
-- Files starting with `-` confuse shell commands because `-` signals a flag
-- Using `./` forces bash to treat it as a relative file path
 
 **Password:** `[REDACTED]`
 
@@ -61,33 +40,21 @@ cat ./-    # ✅
 
 ## Level 2 → 3
 
-**Goal:** Read a file called `--spaces in this filename--`.
+Read a file called `--spaces in this filename--`.
 
-**Connect:**
 ```bash
 ssh bandit2@bandit.labs.overthewire.org -p 2220
 ```
 
-**The Problem:**
-
-Spaces in filenames break shell commands — bash treats each word as a separate argument.
+Spaces break the command — bash treats each word separately. Tried `cat --spaces in this filename--` but it just breaks. Escape the spaces or quote it:
 
 ```bash
-cat --spaces in this filename--   # ❌ broken
+cat ./--spaces\ in\ this\ filename--
+# or
+cat "./--spaces in this filename--"
 ```
 
-**Solution:**
-
-Either escape the spaces with `\` or wrap the name in quotes:
-
-```bash
-cat ./--spaces\ in\ this\ filename--    # ✅ escape spaces
-cat "./--spaces in this filename--"     # ✅ quotes
-```
-
-**What I learned:**
-- Spaces in filenames must be escaped or quoted
-- Tab completion (`Tab` key) handles this automatically
+Tab completion handles this automatically, which is nice.
 
 **Password:** `[REDACTED]`
 
@@ -95,31 +62,21 @@ cat "./--spaces in this filename--"     # ✅ quotes
 
 ## Level 3 → 4
 
-**Goal:** Find a hidden file inside the `inhere` directory.
+Find a hidden file in the `inhere` directory.
 
-**Connect:**
 ```bash
 ssh bandit3@bandit.labs.overthewire.org -p 2220
+
+cd inhere/
+ls
 ```
 
-**The Problem:**
-
-`ls` shows nothing in `inhere/` — the file is hidden.
-
-**Solution:**
-
-Hidden files in Linux start with `.` — use `ls -la` to see them:
+Nothing shows up. Files starting with `.` are hidden by default. Use `-a` flag:
 
 ```bash
-cd inhere/
 ls -la
 cat ...Hiding-From-You
 ```
-
-**What I learned:**
-- Files starting with `.` are hidden from regular `ls`
-- `ls -la` shows all files including hidden ones
-- `-l` = long format, `-a` = all files
 
 **Password:** `[REDACTED]`
 
@@ -127,36 +84,26 @@ cat ...Hiding-From-You
 
 ## Level 4 → 5
 
-**Goal:** Find the only human-readable file in `inhere/` among 10 files named `-file00` to `-file09`.
+Find the human-readable file among 10 binary files.
 
-**Connect:**
 ```bash
 ssh bandit4@bandit.labs.overthewire.org -p 2220
+
+cd inhere/
+ls
 ```
 
-**The Problem:**
-
-Most files contain binary garbage. We need to find the one with ASCII text.
-
-**Solution:**
-
-Use the `file` command to check the type of each file:
+There are 10 files: `-file00` through `-file09`. Most are binary gibberish. Use `file` command to check each:
 
 ```bash
-cd inhere/
 file ./-file*
 ```
 
-Output showed `-file07` as **ASCII text** while all others were binary `data`.
+Shows `-file07` is ASCII text while the rest are binary data. That's the one:
 
 ```bash
 cat ./-file07
 ```
-
-**What I learned:**
-- `file` command identifies the type of a file by reading its magic bytes
-- Not all files contain readable text — binary files look like garbage
-- Globbing with `*` applies a command to multiple files at once
 
 **Password:** `[REDACTED]`
 
@@ -164,41 +111,25 @@ cat ./-file07
 
 ## Level 5 → 6
 
-**Goal:** Find a file in `inhere/` that is human-readable, exactly 1033 bytes, and not executable.
+Find a file that is exactly 1033 bytes and not executable.
 
-**Connect:**
 ```bash
 ssh bandit5@bandit.labs.overthewire.org -p 2220
+
+ls -la
 ```
 
-**The Problem:**
-
-There are 20 subdirectories each with multiple files — manual searching isn't practical.
-
-**Solution:**
-
-Use `find` with specific flags matching the description:
+20 subdirectories with multiple files each. Manual searching would take forever. `find` command with specific filters:
 
 ```bash
 find inhere -type f -size 1033c ! -executable
 ```
 
-| Flag | Meaning |
-|------|---------|
-| `-type f` | files only |
-| `-size 1033c` | exactly 1033 bytes (`c` = bytes) |
-| `! -executable` | not executable |
-
-Result: `inhere/maybehere07/.file2`
+Gets us directly to `inhere/maybehere07/.file2`:
 
 ```bash
 cat inhere/maybehere07/.file2
 ```
-
-**What I learned:**
-- `find` is extremely powerful for locating files by properties
-- `!` negates a condition in `find`
-- File sizes can be specified in bytes (`c`), kilobytes (`k`), megabytes (`M`)
 
 **Password:** `[REDACTED]`
 
@@ -206,42 +137,23 @@ cat inhere/maybehere07/.file2
 
 ## Level 6 → 7
 
-**Goal:** Find a file anywhere on the server owned by user `bandit7`, group `bandit6`, and exactly 33 bytes.
+Find a file owned by bandit7, group bandit6, exactly 33 bytes.
 
-**Connect:**
 ```bash
 ssh bandit6@bandit.labs.overthewire.org -p 2220
 ```
 
-**The Problem:**
-
-The file could be anywhere on the entire filesystem — not just home directory.
-
-**Solution:**
-
-Search from root `/` with ownership filters, redirect errors to `/dev/null`:
+The file could be anywhere on the system. Start from root:
 
 ```bash
 find / -type f -size 33c -user bandit7 -group bandit6 2>/dev/null
 ```
 
-| Flag | Meaning |
-|------|---------|
-| `/` | search entire filesystem |
-| `-user bandit7` | owned by bandit7 |
-| `-group bandit6` | group is bandit6 |
-| `2>/dev/null` | hide permission denied errors |
-
-Result: `/var/lib/dpkg/info/bandit7.password`
+The `2>/dev/null` suppresses permission denied errors. Finds `/var/lib/dpkg/info/bandit7.password`:
 
 ```bash
 cat /var/lib/dpkg/info/bandit7.password
 ```
-
-**What I learned:**
-- `2>/dev/null` suppresses stderr — essential when searching filesystem as non-root
-- Files can be found by owner and group using `-user` and `-group`
-- Passwords and sensitive files are often hidden in non-obvious system directories
 
 **Password:** `[REDACTED]`
 
@@ -249,29 +161,19 @@ cat /var/lib/dpkg/info/bandit7.password
 
 ## Level 7 → 8
 
-**Goal:** Find the password next to the word `millionth` in `data.txt`.
+Find the password next to the word `millionth`.
 
-**Connect:**
 ```bash
 ssh bandit7@bandit.labs.overthewire.org -p 2220
+
+cat data.txt
 ```
 
-**The Problem:**
-
-`data.txt` is huge — thousands of lines. Can't read it manually.
-
-**Solution:**
-
-Use `grep` to find the line containing `millionth`:
+Huge file with thousands of lines. Can't read it manually. Just grep for the keyword:
 
 ```bash
 grep millionth data.txt
 ```
-
-**What I learned:**
-- `grep` searches for patterns inside files
-- Piping `cat` into `grep` is equivalent to `grep pattern file`
-- For large files, always use search tools — never read manually
 
 **Password:** `[REDACTED]`
 
@@ -279,34 +181,21 @@ grep millionth data.txt
 
 ## Level 8 → 9
 
-**Goal:** Find the only line that appears exactly once in `data.txt`.
+Find the only line that appears exactly once.
 
-**Connect:**
 ```bash
 ssh bandit8@bandit.labs.overthewire.org -p 2220
+
+cat data.txt | sort | uniq -c
 ```
 
-**The Problem:**
-
-`data.txt` has thousands of duplicate lines — the password appears only once.
-
-**Solution:**
-
-Sort the file first (so duplicates are adjacent), then use `uniq -u` to show only unique lines:
+Lots of duplicates. Most lines appear multiple times. Need to find the one that appears only once. `uniq` removes adjacent duplicates, so sort first:
 
 ```bash
 sort data.txt | uniq -u
 ```
 
-| Command | Meaning |
-|---------|---------|
-| `sort` | sorts lines alphabetically |
-| `uniq -u` | shows only lines that appear exactly once |
-
-**What I learned:**
-- `uniq` only works on **adjacent** duplicates — always `sort` first
-- `-u` flag shows unique lines, `-d` shows duplicates, `-c` counts occurrences
-- Piping commands together is a core Linux skill
+The `-u` flag shows only lines appearing exactly once.
 
 **Password:** `[REDACTED]`
 
@@ -314,29 +203,19 @@ sort data.txt | uniq -u
 
 ## Level 9 → 10
 
-**Goal:** Find the password in `data.txt` — a binary file — preceded by several `=` characters.
+Find the password in a binary file, preceded by `=` characters.
 
-**Connect:**
 ```bash
 ssh bandit9@bandit.labs.overthewire.org -p 2220
+
+cat data.txt
 ```
 
-**The Problem:**
-
-`data.txt` is mostly binary data. `cat` produces garbage. We need the human-readable strings.
-
-**Solution:**
-
-Use `strings` to extract readable text, then `grep` for `=`:
+Mostly binary garbage. Tried to read it directly but nothing useful. Use `strings` to extract readable text:
 
 ```bash
 strings data.txt | grep '==='
 ```
-
-**What I learned:**
-- `strings` extracts printable ASCII sequences from binary files
-- Binary files can contain hidden readable content
-- Combining `strings` and `grep` is a common forensics technique
 
 **Password:** `[REDACTED]`
 
@@ -344,29 +223,19 @@ strings data.txt | grep '==='
 
 ## Level 10 → 11
 
-**Goal:** Decode a base64 encoded file to find the password.
+Decode a base64 encoded file.
 
-**Connect:**
 ```bash
 ssh bandit10@bandit.labs.overthewire.org -p 2220
+
+cat data.txt
 ```
 
-**The Problem:**
-
-`data.txt` contains base64 encoded data — looks like gibberish when read directly.
-
-**Solution:**
-
-Pipe the file through `base64 -d` to decode it:
+Looks like base64 (random alphanumeric with `+` and `/`). Decode it:
 
 ```bash
 cat data.txt | base64 -d
 ```
-
-**What I learned:**
-- Base64 is an encoding scheme — not encryption. It's easily reversible.
-- `base64 -d` decodes, `base64` (no flag) encodes
-- Base64 is commonly used to transfer binary data over text-based protocols
 
 **Password:** `[REDACTED]`
 
@@ -374,38 +243,21 @@ cat data.txt | base64 -d
 
 ## Level 11 → 12
 
-**Goal:** Decode a ROT13 encoded file.
+Decode a ROT13 encoded file.
 
-**Connect:**
 ```bash
 ssh bandit11@bandit.labs.overthewire.org -p 2220
+
+cat data.txt
 ```
 
-**The Problem:**
-
-All letters in `data.txt` have been rotated by 13 positions — this is ROT13.
-
-**Solution:**
-
-Use `tr` to translate characters — rotate A-Z by 13 and a-z by 13:
+Looks like gibberish but it's ROT13 (every letter shifted by 13). Use `tr` to translate:
 
 ```bash
 cat data.txt | tr 'A-Za-z' 'N-ZA-Mn-za-m'
 ```
 
-**Breaking down the `tr` command:**
-
-| Part | Meaning |
-|------|---------|
-| `A-Za-z` | input: all uppercase and lowercase letters |
-| `N-ZA-Mn-za-m` | output: shift each by 13 positions |
-
-ROT13 is self-reversing — applying it twice gives back the original text.
-
-**What I learned:**
-- `tr` translates characters one-to-one
-- ROT13 is a simple substitution cipher — shift every letter by 13
-- Since the alphabet has 26 letters, ROT13 applied twice = original text
+This shifts A→N, B→O, etc. Works for both upper and lowercase.
 
 **Password:** `[REDACTED]`
 
@@ -413,84 +265,45 @@ ROT13 is self-reversing — applying it twice gives back the original text.
 
 ## Level 12 → 13
 
-**Goal:** Recover the password from `data.txt` — a hexdump of a file that has been repeatedly compressed.
+Recover a password from a hexdump of a repeatedly compressed file.
 
-**Connect:**
 ```bash
 ssh bandit12@bandit.labs.overthewire.org -p 2220
+
+cat data.txt
 ```
 
-**The Problem:**
-
-`data.txt` is a hexdump. Reversing it gives a binary file that has been compressed multiple times using different formats — gzip, bzip2, and tar — nested inside each other.
-
-**Solution:**
-
-Since the home directory is read-only, first create a working directory in `/tmp`:
+It's a hexdump. Home directory is read-only, so create a temp workspace:
 
 ```bash
-mkdir /tmp/b12
-cd /tmp/b12
+mkdir /tmp/work
+cd /tmp/work
 cp ~/data.txt .
-```
-
-Convert the hexdump back to binary:
-
-```bash
 xxd -r data.txt > data.bin
 ```
 
-Then repeatedly check the file type and decompress accordingly:
+Now repeatedly check file type and decompress:
 
 ```bash
 file data.bin          # gzip
 mv data.bin data.gz && gunzip data.gz
-
 file data              # bzip2
 mv data data.bz2 && bunzip2 data.bz2
-
 file data              # gzip again
 mv data data.gz && gunzip data.gz
-
 file data              # tar
-mv data data.tar && tar -xvf data.tar      # extracts data5.bin
-
+mv data data.tar && tar -xf data.tar
 file data5.bin         # tar again
-mv data5.bin data.tar && tar -xf data.tar  # extracts data6.bin
-
+mv data5.bin data.tar && tar -xf data.tar
 file data6.bin         # bzip2
 mv data6.bin data.bz2 && bunzip2 data.bz2
-
 file data              # tar again
-mv data data.tar && tar -xf data.tar       # extracts data8.bin
-
+mv data data.tar && tar -xf data.tar
 file data8.bin         # gzip
 mv data8.bin data.gz && gunzip data.gz
-
-file data              # ASCII text ✅
+file data              # finally text!
 cat data
 ```
-
-**Decompression Chain:**
-
-```
-hexdump
-  → gzip
-    → bzip2
-      → gzip
-        → tar
-          → tar
-            → bzip2
-              → tar
-                → gzip
-                  → ASCII text ✅
-```
-
-**What I learned:**
-- Always check file type with `file` before trying to open — extension doesn't matter
-- `/tmp` is the writable scratch space on shared systems
-- `xxd -r` reverses a hexdump back to binary
-- Files can be compressed multiple times with different formats
 
 **Password:** `[REDACTED]`
 
@@ -498,43 +311,23 @@ hexdump
 
 ## Level 13 → 14
 
-**Goal:** Use an SSH private key to log into the next level.
+Use an SSH private key to log in.
 
-**Connect:**
 ```bash
 ssh bandit13@bandit.labs.overthewire.org -p 2220
+
+ls -la
+cat sshkey.private
 ```
 
-**The Problem:**
-
-Instead of a password, we receive `sshkey.private` — an RSA private key for bandit14.
-
-**Solution:**
-
-Copy the key and set correct permissions:
+Instead of a password, we get a private key. Save it and use it to SSH:
 
 ```bash
 cat sshkey.private > key.pem
 chmod 600 key.pem
-```
-
-SSH using the key:
-
-```bash
 ssh -i key.pem bandit14@bandit.labs.overthewire.org -p 2220
-```
-
-Then read the password file:
-
-```bash
 cat /etc/bandit_pass/bandit14
 ```
-
-**What I learned:**
-- SSH uses public-key cryptography for passwordless authentication
-- Private keys must have permissions `600` (owner only) — SSH rejects if world-readable
-- `-i` flag specifies the identity/private key file
-- RSA is an asymmetric encryption algorithm
 
 **Password:** `[REDACTED]`
 
@@ -542,39 +335,22 @@ cat /etc/bandit_pass/bandit14
 
 ## Level 14 → 15
 
-**Goal:** Submit the bandit14 password to localhost port 30000 to get the bandit15 password.
+Submit the bandit14 password to localhost port 30000.
 
-**Connect:**
 ```bash
 ssh bandit14@bandit.labs.overthewire.org -p 2220
-```
 
-**The Problem:**
-
-Port 30000 is running a service that expects the current level's password and returns the next level's password.
-
-**Solution:**
-
-Get the current password:
-
-```bash
 cat /etc/bandit_pass/bandit14
 ```
 
-Connect to localhost:30000 using netcat:
+There's a service listening on port 30000. Use netcat to connect and send the password:
 
 ```bash
 nc localhost 30000
-[paste password here]
+0qXahG8ZjOVMN9Ghs7iOWsCfZyXOUbYO
 ```
 
-The server responds with `Correct!` and returns the next level's password.
-
-**What I learned:**
-- `nc` (netcat) is the "TCP/IP swiss army knife"
-- Used for reading/writing to network sockets
-- Port 30000 runs a simple echo service that validates passwords
-- Many wargame levels use local services on high-numbered ports
+Server responds with "Correct!" and sends the next password.
 
 **Password:** `[REDACTED]`
 
@@ -582,39 +358,22 @@ The server responds with `Correct!` and returns the next level's password.
 
 ## Level 15 → 16
 
-**Goal:** Submit the bandit15 password to port 30001 using SSL/TLS encryption.
+Submit the bandit15 password to port 30001 using SSL/TLS.
 
-**Connect:**
 ```bash
 ssh bandit15@bandit.labs.overthewire.org -p 2220
-```
 
-**The Problem:**
-
-Port 30001 requires SSL/TLS — `nc` won't work, need `openssl s_client`.
-
-**Solution:**
-
-Get current password:
-
-```bash
 cat /etc/bandit_pass/bandit15
 ```
 
-Connect with SSL/TLS:
+Port 30001 requires SSL/TLS, so `nc` won't work. Use `openssl s_client`:
 
 ```bash
 openssl s_client -connect localhost:30001
-[paste password here]
+8xCjnmgoKbGLhHFAZlGE5Tmu4M2tKJQo
 ```
 
-Server responds with `Correct!` and the next level's password.
-
-**What I learned:**
-- `openssl s_client` creates an SSL/TLS client connection
-- Self-signed certificates produce warnings but still work
-- Verify certificate details even if warnings appear (check CN, validity dates)
-- TLS encrypts the connection (password not visible in plaintext)
+Server validates and returns the next password.
 
 **Password:** `[REDACTED]`
 
@@ -622,46 +381,31 @@ Server responds with `Correct!` and the next level's password.
 
 ## Level 16 → 17
 
-**Goal:** Find which port in range 31000-32000 speaks SSL/TLS and returns the SSH private key for bandit17.
+Find the correct SSL/TLS port in range 31000-32000.
 
-**Connect:**
 ```bash
 ssh bandit16@bandit.labs.overthewire.org -p 2220
 ```
 
-**The Problem:**
-
-The description says there are multiple ports listening, but only one returns credentials. The others echo back what you send.
-
-**Solution:**
-
-Use nmap to scan and identify services:
+Multiple ports listening. Most just echo back what you send. Need to find the one that processes credentials correctly. Use nmap to scan:
 
 ```bash
 nmap -sCV -p 31000-32000 localhost
 ```
 
-Output shows port 31790 has SSL/TLS with service detection. Test it:
+Finds multiple ports. Port 31790 shows SSL/TLS with certificate. Test it:
 
 ```bash
 openssl s_client -connect localhost:31790 -quiet
-[paste password here]
+kSkvUpMQ7lBYyCM4GBPvCvT1BfWRy0Dx
 ```
 
-The server will request the password and return the SSH private key.
-
-Save the private key:
+Gets the private key. Save and use it:
 
 ```bash
-chmod 600 key17.pem
-ssh -i key17.pem bandit17@bandit.labs.overthewire.org -p 2220
+chmod 600 key.pem
+ssh -i key.pem bandit17@bandit.labs.overthewire.org -p 2220
 ```
-
-**What I learned:**
-- `nmap -sCV` performs service version detection
-- Multiple ports run echo services (plain and SSL variants)
-- Only port 31790 with SSL processes credentials correctly
-- Port scanning reveals service types and versions quickly
 
 **Password:** `[REDACTED]`
 
@@ -669,41 +413,21 @@ ssh -i key17.pem bandit17@bandit.labs.overthewire.org -p 2220
 
 ## Level 17 → 18
 
-**Goal:** Find the only line that has changed between `passwords.old` and `passwords.new`.
+Find the line that changed between two files.
 
-**Connect:**
 ```bash
-chmod 600 key17.pem
-ssh -i key17.pem bandit17@bandit.labs.overthewire.org -p 2220
+ssh bandit17@bandit.labs.overthewire.org -p 2220
+
+ls -la
 ```
 
-**The Problem:**
-
-Two files with 100+ lines each. Can't manually compare.
-
-**Solution:**
-
-Use `diff` to show differences:
+Two files: `passwords.old` and `passwords.new`. Both have 100+ lines. Use `diff`:
 
 ```bash
 diff passwords.old passwords.new
 ```
 
-Output:
-```
-42c42
-< KxOU4IzbXM8j8HeAWPAXTd1eC77mp1qV
----
-> [REDACTED]
-```
-
-The new password is the line marked with `>`.
-
-**What I learned:**
-- `diff` compares two files line-by-line
-- Output shows additions (`>`), deletions (`<`), and changes (`c`)
-- Useful for version control and file comparison
-- Can use `diff -u` for unified format (shows context)
+Shows one line changed. The new password is marked with `>`.
 
 **Password:** `[REDACTED]`
 
@@ -711,31 +435,19 @@ The new password is the line marked with `>`.
 
 ## Level 18 → 19
 
-**Goal:** Read the `readme` file when `.bashrc` logs you out immediately upon SSH login.
+Read the readme file when logging in logs you out immediately.
 
-**Connect:**
 ```bash
 ssh bandit18@bandit.labs.overthewire.org -p 2220
 ```
 
-**The Problem:**
-
-Logging in normally results in instant logout due to modified `.bashrc`.
-
-**Solution:**
-
-Execute a command directly via SSH without spawning an interactive shell:
+Logs you out instantly. The `.bashrc` has a logout command. Instead of an interactive shell, execute a command directly:
 
 ```bash
 ssh bandit18@bandit.labs.overthewire.org -p 2220 "cat ~/readme"
 ```
 
-This executes the command before `.bashrc` logout happens and returns the password.
-
-**What I learned:**
-- SSH can execute single commands without interactive shell: `ssh user@host "command"`
-- `.bashrc` is executed for non-interactive shells, but some operations bypass it
-- This demonstrates why security relies on multiple layers, not just `.bashrc`
+Reads the file before `.bashrc` logout happens.
 
 **Password:** `[REDACTED]`
 
@@ -743,39 +455,19 @@ This executes the command before `.bashrc` logout happens and returns the passwo
 
 ## Level 19 → 20
 
-**Goal:** Use a SETUID binary to execute a command as another user and read the next level's password.
+Use a SETUID binary to execute a command as another user.
 
-**Connect:**
 ```bash
 ssh bandit19@bandit.labs.overthewire.org -p 2220
-```
 
-**The Problem:**
-
-A setuid binary `bandit20-do` allows executing commands as `bandit20` user.
-
-**Solution:**
-
-Examine the binary:
-
-```bash
 ls -la
-# -rwsr-x---   1 bandit20 bandit19 14888 Apr  3 15:17 bandit20-do
 ```
 
-The `s` in permissions indicates setuid — when executed, runs as the owner (`bandit20`).
-
-Run a command with elevated privileges:
+There's `bandit20-do` with an `s` in the permissions. That's the SETUID bit — when you run it, it executes as the owner (bandit20). Use it to read the password:
 
 ```bash
 ./bandit20-do cat /etc/bandit_pass/bandit20
 ```
-
-**What I learned:**
-- SETUID (Set User ID) bit allows a binary to run with the owner's permissions
-- Permission format: `s` in owner execute position = setuid
-- `chmod u+s <file>` adds setuid bit
-- Important security concern — setuid binaries can be exploited if they have vulnerabilities
 
 **Password:** `[REDACTED]`
 
@@ -783,46 +475,27 @@ Run a command with elevated privileges:
 
 ## Level 20 → 21
 
-**Goal:** Connect to a listening port using a setuid binary and establish a two-way connection to exchange passwords.
+Use a SETUID binary to connect to a port and exchange passwords.
 
-**Connect:**
 ```bash
 ssh bandit20@bandit.labs.overthewire.org -p 2220
+
+ls -la
 ```
 
-**The Problem:**
-
-A setuid binary `suconnect` takes a port number and connects to localhost, expecting the bandit20 password. If correct, it sends the bandit21 password back.
-
-**Solution:**
-
-Open two terminal sessions:
-
-Terminal 1 - Start a netcat listener:
+The `suconnect` binary connects to a port and validates the password. Set up a listener in one terminal:
 
 ```bash
 nc -lnvp 4444
 ```
 
-Terminal 2 - Run the suconnect binary:
+And connect with the binary in another:
 
 ```bash
 ./suconnect 4444
 ```
 
-The binary will connect to your listener on port 4444. When it connects, netcat will display the connection. Send the current password:
-
-```bash
-[send: 0qXahG8ZjOVMN9Ghs7iOWsCfZyXOUbYO]
-```
-
-The binary verifies the password and sends back the next level's password.
-
-**What I learned:**
-- Setuid binaries can enforce authentication through network connections
-- `nc -lnvp` creates a listening server on a specified port
-- Multi-terminal workflows are useful for testing network services
-- The binary validates the password and transmits the next one
+When it connects, send the bandit20 password. It validates and sends back the next password.
 
 **Password:** `[REDACTED]`
 
@@ -830,58 +503,25 @@ The binary verifies the password and sends back the next level's password.
 
 ## Level 21 → 22
 
-**Goal:** Find the password by examining cron jobs in `/etc/cron.d/`.
+Find the password by examining a cron job.
 
-**Connect:**
 ```bash
 ssh bandit21@bandit.labs.overthewire.org -p 2220
-```
 
-**The Problem:**
-
-A cron job runs automatically for bandit22. Examine what it does to find the password.
-
-**Solution:**
-
-List cron jobs:
-
-```bash
 cat /etc/cron.d/cronjob_bandit22
 ```
 
-Output shows:
-
-```bash
-@reboot bandit22 /usr/bin/cronjob_bandit22.sh &> /dev/null
-* * * * * bandit22 /usr/bin/cronjob_bandit22.sh &> /dev/null
-```
-
-This runs `/usr/bin/cronjob_bandit22.sh` as bandit22 every minute. Check the script:
+Cron job runs a script as bandit22. Check the script:
 
 ```bash
 cat /usr/bin/cronjob_bandit22.sh
 ```
 
-Output:
-
-```bash
-#!/bin/bash
-chmod 644 /tmp/t7O6lds9S0RqQh9aMcz6ShpAoZKF7fgv
-cat /etc/bandit_pass/bandit22 > /tmp/t7O6lds9S0RqQh9aMcz6ShpAoZKF7fgv
-```
-
-The script writes bandit22's password to a temporary file. Read it:
+It writes the password to `/tmp/t7O6lds9S0RqQh9aMcz6ShpAoZKF7fgv`. Just read it:
 
 ```bash
 cat /tmp/t7O6lds9S0RqQh9aMcz6ShpAoZKF7fgv
 ```
-
-**What I learned:**
-- Cron jobs are scheduled tasks that run automatically
-- `/etc/cron.d/` contains system-wide cron jobs
-- Scripts executed by cron run with the specified user's privileges
-- Temporary files created by cron jobs are often world-readable
-- Check what scripts do before running them
 
 **Password:** `[REDACTED]`
 
@@ -889,73 +529,279 @@ cat /tmp/t7O6lds9S0RqQh9aMcz6ShpAoZKF7fgv
 
 ## Level 22 → 23
 
-**Goal:** Find the password by analyzing a cron job that uses md5sum to generate a filename.
+Figure out the filename a cron job uses and read that file.
 
-**Connect:**
 ```bash
 ssh bandit22@bandit.labs.overthewire.org -p 2220
-```
 
-**The Problem:**
-
-A cron job for bandit23 generates a filename using md5sum of a string. We need to calculate what that filename is.
-
-**Solution:**
-
-Check the cron job:
-
-```bash
-cat /etc/cron.d/cronjob_bandit23
-```
-
-Output:
-
-```bash
-@reboot bandit23 /usr/bin/cronjob_bandit23.sh &> /dev/null
-* * * * * bandit23 /usr/bin/cronjob_bandit23.sh &> /dev/null
-```
-
-Read the script:
-
-```bash
 cat /usr/bin/cronjob_bandit23.sh
 ```
 
-Output:
+The script uses md5sum to generate a filename:
 
 ```bash
-#!/bin/bash
 myname=$(whoami)
 mytarget=$(echo I am user $myname | md5sum | cut -d ' ' -f 1)
-echo "Copying passwordfile /etc/bandit_pass/$myname to /tmp/$mytarget"
 cat /etc/bandit_pass/$myname > /tmp/$mytarget
 ```
 
-The script:
-1. Gets the current user (bandit23)
-2. Creates an md5sum of "I am user bandit23"
-3. Writes the password to `/tmp/[md5sum]`
-
-Calculate the md5sum:
+Calculate what the filename is for bandit23:
 
 ```bash
 echo 'I am user bandit23' | md5sum | cut -d ' ' -f 1
-```
+# 8ca319486bfbbc3663ea0fbe81326349
 
-Output: `8ca319486bfbbc3663ea0fbe81326349`
-
-Read the password file:
-
-```bash
 cat /tmp/8ca319486bfbbc3663ea0fbe81326349
 ```
-
-**What I learned:**
-- Cron jobs can be analyzed to predict their behavior
-- md5sum creates a consistent hash from a string
-- Understanding the logic allows us to calculate the output filename
-- The script assumes the temporary directory is secure, but it's readable
 
 **Password:** `[REDACTED]`
 
 ---
+
+## Level 23 → 24
+
+Exploit a cron job that executes scripts from a spool directory.
+
+```bash
+ssh bandit23@bandit.labs.overthewire.org -p 2220
+
+cat /usr/bin/cronjob_bandit24.sh
+```
+
+The script executes files from `/var/spool/bandit24/foo/` that are owned by bandit23. Create a malicious script:
+
+```bash
+cat > /tmp/script.sh << 'SCRIPT'
+#!/bin/bash
+cat /etc/bandit_pass/bandit24 > /tmp/b24pass
+chmod 666 /tmp/b24pass
+SCRIPT
+
+chmod +x /tmp/script.sh
+cp /tmp/script.sh /var/spool/bandit24/foo/
+```
+
+Wait a minute for the cron job to run it, then read:
+
+```bash
+cat /tmp/b24pass
+```
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 24 → 25
+
+Brute-force a 4-digit PIN combined with the password.
+
+```bash
+ssh bandit24@bandit.labs.overthewire.org -p 2220
+```
+
+A daemon on port 30002 wants `password PIN` (separated by space). The PIN is 4 digits (0000-9999). Generate all combinations and send them:
+
+```bash
+for i in $(seq -w 0 9999); do
+  echo "gb8KRRCsshuZXI0tUuR6ypOFjiZbf3G8 $i"
+done | nc localhost 30002 | grep -v "Wrong"
+```
+
+The `seq -w` generates zero-padded numbers. Filters out all the "Wrong" responses to find the correct one.
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 25 → 26
+
+Log in with a private key but escape the restricted shell.
+
+```bash
+ssh bandit25@bandit.labs.overthewire.org -p 2220
+
+cat bandit26.sshkey > key.pem
+chmod 600 key.pem
+ssh -i key.pem bandit26@bandit.labs.overthewire.org -p 2220
+```
+
+Gets kicked out immediately. Check what shell is being used:
+
+```bash
+cat /etc/passwd | grep bandit26
+# bandit26:x:11026:11026:bandit level 26:/home/bandit26:/usr/bin/showtext
+```
+
+It's using `/usr/bin/showtext` which runs `more` on a text file. If the terminal is small enough, `more` will paginate. Resize your terminal window to be very small, then SSH in again. When `more` shows the text, press `v` to open vim:
+
+```
+:set shell=/bin/bash
+:shell
+```
+
+Now you have a real bash shell!
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 26 → 27
+
+Use the SETUID binary to read bandit27 password.
+
+```bash
+ssh -i key.pem bandit26@bandit.labs.overthewire.org -p 2220
+
+ls -la
+```
+
+There's `bandit27-do`. Use it:
+
+```bash
+./bandit27-do cat /etc/bandit_pass/bandit27
+```
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 27 → 28
+
+Clone the git repo and check the README.
+
+```bash
+git clone ssh://bandit27-git@bandit.labs.overthewire.org:2220/home/bandit27-git/repo
+cd repo
+cat README
+```
+
+Password is right there.
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 28 → 29
+
+Check git history to find redacted passwords.
+
+```bash
+git clone ssh://bandit28-git@bandit.labs.overthewire.org:2220/home/bandit28-git/repo
+cd repo
+cat README.md
+```
+
+Password is redacted with `xxxxxxxxxx`. Check git history:
+
+```bash
+git log
+git show 00daa614aac60bd2981c381484191eb7bc4dcfd9
+```
+
+The diff shows the original password before it was redacted.
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 29 → 30
+
+Check different branches for passwords.
+
+```bash
+git clone ssh://bandit29-git@bandit.labs.overthewire.org:2220/home/bandit29-git/repo
+cd repo
+cat README.md
+```
+
+Master branch has nothing. List all branches:
+
+```bash
+git branch -a
+```
+
+Check the `dev` branch:
+
+```bash
+git checkout remotes/origin/dev
+cat README.md
+```
+
+Password is there.
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 30 → 31
+
+Look for git tags.
+
+```bash
+git clone ssh://bandit30-git@bandit.labs.overthewire.org:2220/home/bandit30-git/repo
+cd repo
+git tag
+```
+
+There's a `secret` tag:
+
+```bash
+git show secret
+```
+
+Password is in the tag.
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 31 → 32
+
+Push a file to the repository.
+
+```bash
+git clone ssh://bandit31-git@bandit.labs.overthewire.org:2220/home/bandit31-git/repo
+cd repo
+cat README.md
+cat .gitignore
+```
+
+README wants a `key.txt` file with content "May I come in?" pushed to master. `.gitignore` blocks `.txt` files, but force add it anyway:
+
+```bash
+echo 'May I come in?' > key.txt
+git add -f key.txt
+git commit -m 'add key'
+git push origin master
+```
+
+Server validates and returns the password.
+
+**Password:** `[REDACTED]`
+
+---
+
+## Level 32 → 33
+
+Escape the uppercase shell using `$0`.
+
+```bash
+ssh bandit32@bandit.labs.overthewire.org -p 2220
+```
+
+You're in an uppercase shell. All input gets converted to uppercase, so normal commands fail. Use `$0` to escape:
+
+```
+>> $0
+$ whoami
+bandit33
+$ cat /etc/bandit_pass/bandit33
+```
+
+`$0` refers to the shell itself — it's an escape to the parent shell.
+
+**Password:** `[REDACTED]`
+
+---
+
+*All 33 levels completed!*
